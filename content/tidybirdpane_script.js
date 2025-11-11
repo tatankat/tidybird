@@ -322,34 +322,22 @@ const moveSelectedMessageToFolder = async function (folderId, markAsRead) {
     return;
   }
 
-  let messages = [];
+  let page;
   if (theCurrentTab.mailTab) {
     // Use selected messages if this tab is a mailTab (tab with a list of messages)
     /*
      * this defaults to the current tab, but throws an error if the current tab is not a mailTab
      *  so we first detect the type
      */
-    let page = await browser.mailTabs.getSelectedMessages();
-    moveMessages(page.messages, folderId, markAsRead);
-    while (page.id) {
-      page = await browser.messages.continueList(page.id);
-      moveMessages(page.messages, folderId, markAsRead);
-    }
+    page = await browser.mailTabs.getSelectedMessages();
   } else {
     // Use displayed messages if this tab is not a mailTab (we get a result if the tab is showing a message)
-    /*
-     * we don't use getDisplayedMessages as I don't know a way to display multiple images in a tab
-     *  without having them selected in the same tab
-     * this method is preferred as getDisplayedMessages is only supported from 78.4.0
-     */
-    messages = [
-      await browser.messageDisplay.getDisplayedMessage(theCurrentTab.id),
-    ];
-    if (messages[0] === null) {
-      // in that tab, there are no at this very moment(!) displayed messages found
-      return;
-    }
-    moveMessages(messages, folderId, markAsRead);
+    page = await browser.messageDisplay.getDisplayedMessages(theCurrentTab.id);
+  }
+  moveMessages(page.messages, folderId, markAsRead);
+  while (page.id) {
+    page = await browser.messages.continueList(page.id);
+    moveMessages(page.messages, folderId, markAsRead);
   }
 };
 
