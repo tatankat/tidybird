@@ -35,8 +35,7 @@
     "accountsRead",
     "messagesRead",
     "accountsFolders",
-    "messagesMove",
-    "theme"
+    "messagesMove"
   ],
   "experiment_apis": {
     "ex_customui": {

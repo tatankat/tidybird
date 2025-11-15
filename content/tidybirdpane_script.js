@@ -5,174 +5,6 @@ let settingsCache;
 getSettings();
 
 /*
- * Themed TB support: apply theme colors
- */
-async function setCssVariable(variablename,value) {
-  document.documentElement.style.setProperty(variablename,value);
-}
-async function applyThemeColors(theme) {
-  if (theme === undefined) {
-    theme = await messenger.theme.getCurrent();
-  }
-
-  // when using the system theme all css, there are no theme colors
-  //  so we have to take colors from the interface
-  let tidybird_backgroundcolor = await messenger.ex_customui.getInterfaceColor("--layout-background-1");
-  // folderPane background: var(--sidebar-background) = var(--sidebar-background-color, var(--foldertree-background))
-  // messagepanebox (messageHeader) background: var(--layout-background-1);
-  setCssVariable("--tidybird-backgroundcolor", tidybird_backgroundcolor);
-  let tidybird_textcolor = await messenger.ex_customui.getInterfaceColor("--layout-color-1");
-  setCssVariable("--tidybird-textcolor", tidybird_textcolor);
-  let tidybird_button_bordercolor = await messenger.ex_customui.getInterfaceColor("--toolbarbutton-header-bordercolor");
-  setCssVariable("--tidybird-button-bordercolor", tidybird_button_bordercolor);
-  /*
-   * Buttons are transparent, --toolbarbutton-background is not defined
-  let tidybird_button_bgcolor = await messenger.ex_customui.getInterfaceColor("--toolbarbutton-background");
-  setCssVariable("--tidybird-button-bgcolor", tidybird_button_bgcolor);
-  */
-  let tidybird_button_hover_bgcolor = await messenger.ex_customui.getInterfaceColor("--toolbarbutton-hover-background");
-  setCssVariable("--tidybird-button-hover-bgcolor", tidybird_button_hover_bgcolor);
-  let tidybird_button_active_bgcolor = await messenger.ex_customui.getInterfaceColor("--toolbarbutton-active-background");
-  setCssVariable("--tidybird-button-active-bgcolor", tidybird_button_active_bgcolor);
-  let tidybird_button_hover_bordercolor = await messenger.ex_customui.getInterfaceColor("--toolbarbutton-active-bordercolor"); // the active is not a mistake, that is really the used variable in Thunderbird
-  setCssVariable("--tidybird-button-hover-bordercolor", tidybird_button_hover_bordercolor);
-  let tidybird_button_active_bordercolor = await messenger.ex_customui.getInterfaceColor("--toolbarbutton-header-bordercolor");
-  setCssVariable("--tidybird-button-active-bordercolor", tidybird_button_active_bordercolor);
-  //FIXME: broken since 128
-  // unread button colors, not available in any theme
-  let tidybird_thread_pane_unread_stroke = await messenger.ex_customui.getInterfaceColor("--thread-pane-unread-stroke");
-  setCssVariable("--tidybird-thread-pane-unread-stroke", tidybird_thread_pane_unread_stroke);
-  let tidybird_thread_pane_unread_fill = await messenger.ex_customui.getInterfaceColor("--thread-pane-unread-fill");
-  setCssVariable("--tidybird-thread-pane-unread-fill", tidybird_thread_pane_unread_fill);
-
-  // Themes are better defined now (except for system theme)
-  // getInterfaceColor slightly broken on some themes/128, maybe comparable cause as issue we had to get flex rules
-  //  but using it, results in a popup color (by getting a background color) & switching colors with system theme & better button colors for dark theme
-  if(theme.colors/* && !tidybird_backgroundcolor*/) {
-    if(theme.colors.sidebar) {
-      // sidebar background color is used in message header
-      setCssVariable("--tidybird-backgroundcolor", theme.colors.sidebar);
-    } else if(theme.colors.toolbar) {
-      // not sure why this is different
-      setCssVariable("--tidybird-backgroundcolor", theme.colors.toolbar);
-    }
-    if(theme.colors.toolbar_field_text) {
-      // this is used in the message header (instead of sidebar_text)
-      setCssVariable("--tidybird-textcolor", theme.colors.toolbar_field_text);
-    }
-
-    // bordercolor used in message header is just white/black with some transparency
-    // it also changes on active...
-    let bordercolor = theme.colors.input_border;
-    if (bordercolor) {
-      setCssVariable("--tidybird-button-header-bordercolor", bordercolor);
-    }
-
-    // missing or bad in doc: https://webextension-api.thunderbird.net/en/latest/theme.html#themetype
-    if (theme.colors.button) {
-      setCssVariable("--tidybird-button-bgcolor", theme.colors.button);
-    }
-
-    let hovercolor = theme.colors.button_hover;
-    if (!hovercolor) {
-      hovercolor = theme.colors.button_background_hover;
-    }
-    if (hovercolor) {
-      setCssVariable("--tidybird-button-hover-bgcolor", hovercolor);
-    }
-
-    let activecolor = theme.colors.button_active;
-    if (!activecolor) {
-      activecolor = theme.colors.button_background_active;
-    }
-    if (activecolor) {
-      setCssVariable("--tidybird-button-active-bgcolor", activecolor);
-    }
-  }
-  tooltipColorUpdated = false;
-}
-
-/**
- * calculate new colorcomponent using premultiplied alpha colorcomponents
- **/
-function calculate_colorcomponent(color_upper, color_under, alpha_upper) {
-  return color_upper + color_under * (1 - alpha_upper);
-}
-
-/**
- * Update the tooltip color, if not yet done, because it may be transparent (from the theme) otherwise
- *  this fires when the mouse hovers over the button
- *  if firing when the theme changes or when the first button is added, the info may seem correct, but is not in all cases
- *   for example when changing back to light from dark
- *   even when we are sure a button exists to take the computed color from
- **/
-let tooltipColorUpdated = false;
-async function update_tooltipcolor(aButton) {
-  if (tooltipColorUpdated) {
-    // do not update if already done once after loading or theme change
-    return;
-  }
-
-  // no button is given, we got fired because the theme has changed, get the first button with tooltip
-  if (aButton === undefined) {
-    aButton = document.querySelector("[tooltiptext]");
-  }
-  // no button was found not given, we should retry another time
-  if (!aButton) {
-    return;
-  }
-  tooltipColorUpdated = true; // set this here, so we don't do it twice at the same time; we assume nothing will go wrong
-
-  // calculate the color of the button: https://en.wikipedia.org/wiki/Alpha_compositing
-  let color = [0, 0, 0, 0];
-  // this starts with the button and then runs over all its parents
-  let buttonParent = aButton;
-  do {
-    let buttonParent_color = window
-      .getComputedStyle(buttonParent)
-      .getPropertyValue("background-color");
-    console.log(`style computed background-color on ${buttonParent.tagName}: ${buttonParent_color}`);
-    let color_under = [0, 0, 0, 0];
-    if (buttonParent_color != "") {
-      color_under = buttonParent_color
-        .replace(/.*\((.*)\)/, "$1")
-        .split(", ")
-        .map((x) => parseFloat(x));
-    }
-    if (color_under.length == 3) {
-      color_under.push(1); // rgb color without alpha layer
-    }
-    let alpha = calculate_colorcomponent(color[3], color_under[3], color[3]);
-    // if alpha == 0; then the color is fully transparent and the values make no difference
-    if (alpha != 0) {
-      for (let i = 0; i < color.length - 1; i++) {
-        color[i] =
-          calculate_colorcomponent(
-            color[i] * color[3],
-            color_under[i] * color_under[3],
-            color[3]
-          ) / alpha;
-      }
-    }
-    color[3] = alpha;
-    console.log(`calculated color: ${color}`);
-    buttonParent = buttonParent.parentElement;
-  } while (buttonParent !== null && color[3] < 1);
-  let tooltip_bgcolor = "rgba(" + color.join(", ") + ")";
-  console.log(`result: ${tooltip_bgcolor}`);
-  setCssVariable("--tidybird-tooltip-bgcolor", tooltip_bgcolor);
-}
-
-async function themeChangedListener(themeUpdateInfo) {
-  tooltipColorUpdated = false;
-  /*await */applyThemeColors(themeUpdateInfo.theme);
-  // theme colors should be fully applied before we can calculate the hover bg color
-  //update_tooltipcolor();
-}
-messenger.theme.onUpdated.addListener(themeChangedListener);
-applyThemeColors();
-
-/*
  * Set button size
  */
 async function applyButtonSize(changedSizes) {
@@ -188,20 +20,26 @@ async function applyButtonSize(changedSizes) {
   }
   let height = changedSizes.buttonheight;
   let margin = changedSizes.buttonmargin;
-  let stylesheetRules = document.styleSheets[0].rules;
-  for (let rule of stylesheetRules) {
-    if (rule.selectorText == ".tidybird-folder-move-button" || rule.selectorText == ".tidybird-header") {
-      if (height !== undefined && rule.style.height != "") {
-        if (height == -1) {
-          height = "auto";
-        } else {
-          height = `${height}px`;
+  for (const styleSheet of document.styleSheets) {
+    // find the stylesheet with given title
+    if (styleSheet.title == "tidybirdrules") {
+      const stylesheetRules = styleSheet.cssRules;
+      for (let rule of stylesheetRules) {
+        if (rule.selectorText == ".tidybird-button" || rule.selectorText == ".tidybird-header") {
+          if (height !== undefined && rule.style.height != "") {
+            if (height == -1) {
+              height = "auto";
+            } else {
+              height = `${height}px`;
+            }
+            rule.style.height = height;
+          }
+          if (margin !== undefined && rule.style['margin-bottom'] != "") {
+            rule.style['margin-bottom'] = `${margin}px`;
+          }
         }
-        rule.style.height = height;
       }
-      if (margin !== undefined && rule.style['margin-bottom'] != "") {
-        rule.style['margin-bottom'] = `${margin}px`;
-      }
+      break; // only 1 tidybirdrules stylesheet
     }
   }
 }
@@ -436,18 +274,14 @@ const addFolderButtons = async function (expandedFolder,buttonParent) {
       button.lastElementChild.textContent = expandedFolder.rootName;
     }
     button.setAttribute("data-folder", expandedFolder.internalPath);
-    button.setAttribute("tooltiptext", expandedFolder.displayPath);
+    button.setAttribute("title", expandedFolder.displayPath); // this is the tooltip
 
     const folderId = await common.constructFolderId(expandedFolder.accountId,expandedFolder.path);
     button.addEventListener("click", function () {
       moveSelectedMessageToFolder(folderId, markAsRead == "yes");
     });
-    button.addEventListener("mouseenter", function (theEvent) {
-      update_tooltipcolor(theEvent.target);
-    });
     console.debug("Appending button to parent");
     buttonParent.appendChild(button);
-    // the parent may not be part of the document, so we can't calculate the tooltip color yet
     console.debug("Appended button to parent");
   }
   foldersInList.push(expandedFolder.internalPath);
@@ -828,8 +662,6 @@ async function showButtons() {
 
   // folderlists should be added before the tmp parent is added to the real parent
   listParent.appendChild(tmpListParent);
-
-  //update_tooltipcolor(); // we do this when we are sure the button is added and the whole document and css is loaded => on hover
 }
 showButtons();
 addSettingsButton(othersParent);

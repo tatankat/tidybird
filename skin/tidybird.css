@@ -1,22 +1,12 @@
-/* enable light-dark for system theme */
 :root {
-  color-scheme: light dark;
-}
-
-#tidybirdButton,
-[place="palette"] > #tidybirdButton {
-list-style-image: url("chrome://tidybird/skin/icon.png");
+  color-scheme: light dark; /* enable light-dark for system theme */
+  background-color: transparent;
 }
 
 #tidybirdPane {
   padding: 6px;
   margin: 0;
   overflow: auto;
-}
-
-#tidybirdPane {
-  background-color: var(--tidybird-backgroundcolor) !important;
-  color: var(--tidybird-textcolor);
 }
 
 .tidybird-header {
@@ -26,48 +16,26 @@ list-style-image: url("chrome://tidybird/skin/icon.png");
 }
 .tidybird-button {
   width: 100%;
+  margin-top: 0;
+  margin-right: 0;
+  margin-bottom: 3px;
+  margin-left: 0;
+  height: auto;
+  min-height: unset;
+  padding-top: 1px;
+  padding-right: .25em;
+  padding-bottom: 1px;
+  padding-left: .25em;
 }
 .tidybird-folder-move-button {
-  margin-bottom: 3px;
   display: flex;
   flex-wrap: wrap;
-  word-break: break-word; /* at least for tooltips! TODO should this be a toggle setting for the button text? */
-  height: auto;
+  overflow-wrap: break-word;
   align-content: center;
 }
 
 .hidden {
   display: none;
-}
-
-/*
- * since changing the background-color of a button seems to reset all css properties
- *  and we have to change the background-color when a dark theme is used (as it is left default and may render the text unreadable
- * we try to re-set all necessary properties when a theme is used
- */
-.tidybird-layout-button {
-  /* toolbarbutton.css */
-  text-shadow: inherit;
-  /* messenger.css */
-  color: inherit !important;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  transition: background-color .15s, border-color .15s;
-}
-
-.tidybird-layout-button {
-  border-color: var(--tidybird-button-bordercolor);
-  background-color: var(--tidybird-button-bgcolor);
-}
-
-.tidybird-layout-button:hover {
-  border-color: var(--tidybird-button-hover-bordercolor);
-  background-color: var(--tidybird-button-hover-bgcolor);
-}
-
-.tidybird-layout-button:active {
-  border-color: var(--tidybird-button-active-bordercolor);
-  background-color: var(--tidybird-button-active-bgcolor);
 }
 
 .tidybird-folder-move-button-label-1 {
@@ -87,37 +55,6 @@ list-style-image: url("chrome://tidybird/skin/icon.png");
   flex-shrink: 1;
   flex-basis: auto;
   align-self: center;
-}
-
-/* working tooltips thanks to https://stackoverflow.com/a/25813336 */
-[tooltiptext]::after {
-  /* needed */
-  position: absolute;
-  opacity: 0;
-  pointer-events: none; /* otherwise, we have funky effects on overlapping tooltips and hoovers */
-  /* needed with customized value */
-  content: attr(tooltiptext);
-
-  /* customizable */
-  transition: all 0.15s ease;
-  padding: .5em;
-  border-radius: 10px;
-  box-shadow: -2px -2px 1px silver;
-  word-wrap: break-word; /* does not change anything, probably because the size is not fixed */
-}
-
-[tooltiptext]::after {
-  color: var(--tidybird-textcolor);
-}
-
-[tooltiptext]:hover::after {
-  /* needed: 0 << opacity <= 1  */
-  opacity: .95;
-
-  /* customizable */
-  margin-top: 1.5em;
-  transition-delay: 0.65s;
-  background-color: var(--tidybird-tooltip-bgcolor);
 }
 
 /*

@@ -104,7 +104,6 @@ Once the necessary API methods are implemented in Thunderbird, Tidybird will nee
 - messagesRead (messageManager): messages API - get current message(s), react on moved message, mark message as read, move message
 - accountsFolders: accounts API - get name and full path to a folder
 - messagesMove: move messages to a folder
-- theme: read theme colors to apply to buttons
 
 ## License
 

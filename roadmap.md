@@ -32,23 +32,28 @@
             1. upload .xpi to add-ons site
             1. Once accepted, finalize release on github & set as latest
 1. optional quick successor 5.x
-    1. remove need for themelistener (except maybe for tooltip), using browser css
     1. follow font size -> create issue
     1. reset own MRM list with TB list: button in options
     1. easier debugging of issues:
-        1. add debug messages including timing & export (see tbsync)
+        1. create setting to enable debugging
+        1. add debug messages including timing (already in thunderbird) & export (see tbsync)
         1. create export/copy of anonymized settings + full folder structure & account types to include in bug report
 1. 5.x+ Other optimisations
+    1. [branch:undo] ctrl-Z only works after clicking away from tidybird
+    1. [branch:mv3] continue effort to move to mv3
+        1. current version makes messages disappear
+        1. disappears after some time
+        1. test multiple movings after each other
+        1. when working: themed icons
     1. review folder expansion with new api using folderId
     1. handle special folders (with toggle setting)
         1. on setting toggle: set setting of special folders found to "never" or default
         1. on folder type change (possible?): change setting
     1. add mark as read to simple settings (default for all buttons)
-    1. once we have our own MRM: shorcut for our own undo (#74); TB issue is fixed in version X
     1. once we have our own MRM: check for reset, show info in interface (#40)
-    1. themed options: do the same as for options; header: h2.list-header-title (threadpane.css)
     1. onAccountNameChange
     1. option to not show parent
+    1. option to show Tidybird with opened mail (not in mailTab) and test getDisplayedMessages
 1. 6 Expert settings
     1. keep last status of expert settings: expand or not
     1. combine with simple settings (keep in mind reset to "default")
